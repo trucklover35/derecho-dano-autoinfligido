@@ -287,7 +287,8 @@ function map(n, say) {
   const from = Math.max(0, n - 1);
   const nodes = PLACES.map((p, i) => `<div class="node ${i < n ? 'done' : i === n ? 'cur' : ''}" style="left:${NX(i) - 1.5}rem;top:${NY(i) - 1.5}rem;animation-delay:${i * .1}s">${ic(PICON[i], 2.5)}</div><p class="nl p2 sm" style="left:${NX(i) - 3.8}rem;top:${NY(i) + 1.9}rem">${p}</p>`).join('');
   const pts = PLACES.map((p, i) => `${NX(i) * 10},${NY(i) * 10}`).join(' ');
-  const hx = i => (NX(i) - 1.2) + 'rem', hy = i => (NY(i) - 5.4) + 'rem';
+  /* En porcentaje del área de escena, para que cambiar el tamaño de la ventana no vuelva a animar al personaje */
+  const hx = i => ((NX(i) - 1.2) / 48 * 100) + '%', hy = i => ((NY(i) - 5.4) / 18 * 100) + '%';
   return { ch: 'RECORRIDO', name: 'Recorrido: ' + PLACES[n][0] + PLACES[n].slice(1).toLowerCase(), html: `<div class="map"><svg viewBox="0 0 480 180" shape-rendering="crispEdges"><polyline points="${pts}" fill="none" stroke="#0f380f" stroke-width="2" stroke-dasharray="4 4"/></svg><h2 class="p2">CAPÍTULO ${n + 1} DE 6</h2>${nodes}<div id="mh" style="left:${hx(from)};top:${hy(from)}">${ic('hero', 3, 'bob')}</div></div>`,
     beats: [{ say, css: { '#mh': { left: hx(n), top: hy(n) } } }] };
 }
@@ -583,7 +584,12 @@ function apply(b, anim) {
   if (b.on) $$(b.on).forEach(e => e.classList.add('on'));
   for (const [s, c] of Object.entries(b.add || {})) $$(s).forEach(e => e.classList.add(c));
   for (const [s, t] of Object.entries(b.set || {})) $$(s).forEach(e => e.textContent = t);
-  for (const [s, o] of Object.entries(b.css || {})) $$(s).forEach(e => Object.assign(e.style, o));
+  /* Sin animación (al retroceder o al abrir una escena), los elementos saltan a su estado final */
+  for (const [s, o] of Object.entries(b.css || {})) $$(s).forEach(e => {
+    if (!anim) e.style.transition = 'none';
+    Object.assign(e.style, o);
+    if (!anim) { void e.offsetWidth; e.style.transition = ''; }
+  });
   if (b.say !== undefined) say(b.say, anim);
 }
 /* Dibuja la escena s y reproduce sus pasos hasta b */
