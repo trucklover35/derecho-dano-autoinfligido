@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El derecho al daño autoinfligido</title>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* ===========================================
+   VIEWPORT FITTING: MANDATORY BASE STYLES
+   (viewport-base.css, incluido completo)
+   =========================================== */
+html, body { height: 100%; overflow-x: hidden; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+.slide { width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; scroll-snap-align: start; display: flex; flex-direction: column; position: relative; }
+.slide-content { flex: 1; display: flex; flex-direction: column; justify-content: center; max-height: 100%; overflow: hidden; padding: var(--slide-padding); }
+:root {
+  --title-size: clamp(1.5rem, 5vw, 4rem); --h2-size: clamp(1.25rem, 3.5vw, 2.5rem); --h3-size: clamp(1rem, 2.5vw, 1.75rem);
+  --body-size: clamp(0.75rem, 1.5vw, 1.125rem); --small-size: clamp(0.65rem, 1vw, 0.875rem);
+  --slide-padding: clamp(1rem, 4vw, 4rem); --content-gap: clamp(0.5rem, 2vw, 2rem); --element-gap: clamp(0.25rem, 1vw, 1rem);
+}
+.card, .container, .content-box { max-width: min(90vw, 1000px); max-height: min(80vh, 700px); }
+.feature-list, .bullet-list { gap: clamp(0.4rem, 1vh, 1rem); }
+.feature-list li, .bullet-list li { font-size: var(--body-size); line-height: 1.4; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: clamp(0.5rem, 1.5vw, 1rem); }
+img, .image-container { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+@media (max-height: 700px) { :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --content-gap: clamp(0.4rem, 1.5vw, 1rem); --title-size: clamp(1.25rem, 4.5vw, 2.5rem); --h2-size: clamp(1rem, 3vw, 1.75rem); } }
+@media (max-height: 600px) { :root { --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem); --content-gap: clamp(0.3rem, 1vw, 0.75rem); --title-size: clamp(1.1rem, 4vw, 2rem); --body-size: clamp(0.7rem, 1.2vw, 0.95rem); } .nav-dots, .keyboard-hint, .decorative { display: none; } }
+@media (max-height: 500px) { :root { --slide-padding: clamp(0.4rem, 2vw, 1rem); --title-size: clamp(1rem, 3.5vw, 1.5rem); --h2-size: clamp(0.9rem, 2.5vw, 1.25rem); --body-size: clamp(0.65rem, 1vw, 0.85rem); } }
+@media (max-width: 600px) { :root { --title-size: clamp(1.25rem, 7vw, 2.5rem); } .grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; } html { scroll-behavior: auto; } }
+
+/* ===========================================
+   TEMA: CONSOLA PORTÁTIL DE CUATRO TONOS
+   Cambia estos colores para cambiar todo el look.
+   Los sprites usan los mismos tonos (ver COL en el script).
+   =========================================== */
+:root { --g0:#0f380f; --g1:#306230; --g2:#8bac0f; --g3:#9bbc0f; --grid:rgba(15,56,15,.05); }
+
+/* ===========================================
+   PANTALLA VIRTUAL DE 480 x 270
+   0.1rem equivale a un pixel virtual. La pantalla se escala
+   entera a la ventana, así que nada se desborda nunca.
+   =========================================== */
+html { font-size: calc(min(100vw, 177.78vh) / 48); }
+* { box-sizing: border-box; margin: 0; padding: 0; font-variant-ligatures: none; }
+body { height: 100vh; overflow: hidden; background: var(--g0); color: var(--g0); display: grid; place-items: center; cursor: pointer; user-select: none; }
+#stage { position: relative; width: 48rem; height: 27rem; overflow: hidden; background: var(--g3);
+  background-image: linear-gradient(var(--grid) .1rem, transparent .1rem), linear-gradient(90deg, var(--grid) .1rem, transparent .1rem); background-size: .4rem .4rem; }
+
+/* === TIPOGRAFÍA ===
+   Silkscreen: etiquetas en mayúsculas. VT323: texto de lectura. */
+.p2 { font: 1rem/1.4 'Silkscreen', monospace; }
+.p2.sm { font-size: .8rem; }
+.t { font: 1.1rem/1.2 'VT323', monospace; }
+.t.lg { font-size: 1.45rem; }
+.t.sm { font-size: 1rem; }
+h1 { font-weight: 400; }
+
+/* === BARRA SUPERIOR (capítulo y progreso) === */
+#hud { position: absolute; inset: 0 0 auto 0; height: 1.4rem; background: var(--g0); color: var(--g3); font: .8rem 'Silkscreen', monospace; display: flex; align-items: center; justify-content: space-between; padding: 0 .6rem; z-index: 20; }
+#bar { position: absolute; left: 0; bottom: 0; height: .2rem; background: var(--g2); transition: width .3s steps(4); }
+.full #hud, .full #dlg { display: none; }
+
+/* === ÁREA DE ESCENA === */
+#view { position: absolute; top: 1.4rem; left: 0; right: 0; height: 18rem; }
+.full #view { top: 0; height: 27rem; }
+
+/* === CAJA DE TEXTO (efecto de máquina de escribir) === */
+#dlg { position: absolute; left: .4rem; right: .4rem; bottom: .4rem; height: 6.8rem; border: .2rem solid var(--g0); background: var(--g3); box-shadow: inset 0 0 0 .2rem var(--g3), inset 0 0 0 .4rem var(--g1); padding: .7rem 1.3rem; font: 1.35rem/1.25 'VT323', monospace; z-index: 10; }
+#dlg.done::after { content: ''; position: absolute; right: 1rem; bottom: .8rem; border: .4rem solid transparent; border-top-color: var(--g0); border-bottom: 0; animation: blink .8s steps(1) infinite; }
+
+/* === PIEZAS COMUNES === */
+.box { border: .2rem solid var(--g0); background: var(--g3); padding: .6rem .8rem; }
+.tag { display: inline-block; border: .1rem solid var(--g0); font: .8rem/1 'Silkscreen', monospace; padding: .3rem .4rem; font-weight: 400; white-space: nowrap; }
+.tag.neg { background: var(--g0); color: var(--g3); }
+.spr { image-rendering: pixelated; display: block; flex: none; }
+.flag { outline: .2rem solid var(--g0); }
+.pad { position: absolute; inset: .8rem 1rem; display: flex; flex-direction: column; gap: .6rem; }
+.hdr { display: flex; align-items: center; gap: .8rem; flex: none; }
+.hd { font: 700 1.05rem/1 'Silkscreen', monospace; background: var(--g0); color: var(--g3); padding: .4rem .6rem; align-self: flex-start; }
+.cols { display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: .8rem; flex: 1; min-height: 0; }
+.ctr { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; }
+.stack { display: flex; flex-direction: column; gap: .6rem; justify-content: center; }
+.tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+.crd { display: flex; flex-direction: column; align-items: center; gap: .5rem; text-align: center; padding: .7rem .6rem; }
+.crd .t { font-size: 1.1rem; }
+.crd .ex { font-size: 1rem; border-top: .1rem dashed var(--g1); padding-top: .4rem; width: 100%; }
+.fl { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+.list { padding: .3rem .8rem; }
+.row { display: flex; align-items: center; gap: .8rem; padding: .2rem 0; border-bottom: .1rem dashed var(--g1); }
+.row:last-child { border-bottom: 0; }
+.row .tag { margin-left: auto; }
+.li::before { content: ''; display: inline-block; width: .5rem; height: .5rem; background: var(--g0); margin-right: .6rem; vertical-align: .15rem; }
+.hp { height: .8rem; border: .2rem solid var(--g0); background: var(--g3); margin-top: .3rem; }
+.hp i { display: block; height: 100%; background: var(--g1); transition: width .8s steps(8); }
+.hi { box-shadow: 0 0 0 .3rem var(--g3), 0 0 0 .5rem var(--g0); }
+.def { display: flex; gap: .8rem; align-items: center; }
+
+/* === REVELADO POR PASOS: .h está oculto hasta recibir .on === */
+.h { visibility: hidden; }
+.h.on { visibility: visible; animation: pop .3s steps(3) both; }
+@keyframes pop { from { opacity: 0; transform: translateY(.8rem); } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes bob { 50% { transform: translateY(-.2rem); } }
+@keyframes drop { from { transform: translateY(-14rem); } }
+.bob { animation: bob 1s steps(2) infinite; }
+.blink { animation: blink 1s steps(1) infinite; }
+
+/* === CORTINA ENTRE ESCENAS === */
+#wipe { position: absolute; inset: 0; background: var(--g0); z-index: 40; transform: translateX(-100%); pointer-events: none; }
+#wipe.go { animation: wipe .54s steps(6) both; }
+@keyframes wipe { 0% { transform: translateX(-100%); } 45%, 55% { transform: none; } 100% { transform: translateX(100%); } }
+
+/* === MENÚ DE ESCENAS (tecla M) === */
+#menu { position: absolute; inset: 1rem; z-index: 50; display: none; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: auto repeat(21, auto); gap: 0 1rem; padding: .8rem 1rem; box-shadow: .6rem .6rem 0 var(--g1); }
+#menu.open { display: grid; }
+#menu h2 { grid-column: 1 / -1; font: 1rem 'Silkscreen', monospace; font-weight: 400; padding-bottom: .4rem; }
+#menu a { font: .95rem/1.05 'VT323', monospace; padding: 0 .4rem; white-space: nowrap; overflow: hidden; }
+#menu a.sel { background: var(--g0); color: var(--g3); }
+
+/* === ESCENA: TÍTULO Y CRÉDITOS === */
+.ttl { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; text-align: center; }
+.ttl h1 { font: 700 2.4rem/1.3 'Silkscreen', monospace; text-shadow: .2rem .2rem 0 var(--g2); animation: drop .8s steps(8) both; }
+.ttl .t { font-size: 1.5rem; }
+.icons { display: flex; align-items: flex-end; gap: 1.6rem; }
+
+/* === ESCENA: MAPA === */
+.map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map h2 { position: absolute; bottom: .6rem; left: 0; right: 0; text-align: center; font-weight: 400; }
+.node { position: absolute; width: 3rem; height: 3rem; border: .2rem solid var(--g0); background: var(--g3); display: grid; place-items: center; animation: pop .3s steps(3) both; }
+.node.done { background: var(--g2); }
+.node.cur { animation: pop .3s steps(3) both, ring .6s steps(1) .5s infinite; }
+@keyframes ring { 50% { box-shadow: 0 0 0 .3rem var(--g3), 0 0 0 .5rem var(--g0); } }
+.nl { position: absolute; width: 7.6rem; text-align: center; }
+#mh { position: absolute; transition: left 1.2s steps(12), top 1.2s steps(12); }
+
+/* === ESCENAS SUELTAS === */
+.ask { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: 32rem; text-align: center; padding: 1rem; box-shadow: 0 0 0 .2rem var(--g3), .7rem .7rem 0 var(--g1); z-index: 5; }
+.slow { animation: bob 1.8s steps(2) infinite; }
+.fast { animation: bob .25s steps(2) infinite; }
+.wob { animation: wob 1.2s steps(4) infinite; }
+@keyframes wob { 25% { transform: skewX(18deg) scale(1.1); } 75% { transform: skewX(-18deg) scale(.9); } }
+.grp { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; align-content: flex-end; }
+.scale { display: grid; grid-template-columns: repeat(4, 1fr); height: 1.2rem; border: .2rem solid var(--g0); flex: none; }
+.scale i:nth-child(2) { background: var(--g2); } .scale i:nth-child(3) { background: var(--g1); } .scale i:nth-child(4) { background: var(--g0); }
+.ends { display: flex; justify-content: space-between; align-items: center; }
+.mach { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.4rem; flex: 1; align-items: center; }
+.dials { display: flex; flex-direction: column; gap: .4rem; }
+.dial { display: grid; grid-template-columns: 10rem 1fr; align-items: center; gap: .6rem; }
+.dial .hp { margin: 0; }
+.hp.big { height: 2rem; }
+.tl { position: relative; flex: 1; display: flex; flex-direction: column; gap: .4rem; }
+.trk { position: relative; height: 3.2rem; flex: none; }
+#th { position: absolute; bottom: 0; left: 8.33%; translate: -50% 0; transition: left .8s steps(8); }
+.ln { height: .4rem; background: var(--g0); flex: none; }
+.tc { display: flex; flex-direction: column; align-items: center; gap: .35rem; text-align: center; }
+.door { width: 3rem; height: 4rem; border: .2rem solid var(--g0); position: relative; flex: none; }
+.door::after { content: ''; position: absolute; right: .3rem; top: 1.8rem; width: .4rem; height: .4rem; background: var(--g2); }
+.d1 { background: var(--g0); } .d2 { background: linear-gradient(90deg, var(--g0) 50%, var(--g3) 50%); } .d3 { background: var(--g3); }
+.awn { height: 1.2rem; width: 100%; background: repeating-linear-gradient(90deg, var(--g0) 0 1rem, var(--g3) 1rem 2rem); border: .2rem solid var(--g0); flex: none; }
+.case { display: flex; flex-direction: column; gap: .2rem; padding: .4rem .8rem; }
+.thesis { font-size: 1.45rem; }
+.fc { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; text-align: center; }
+.ico { width: 2.6rem; display: flex; justify-content: center; flex: none; }
+.ir { display: flex; align-items: center; gap: .7rem; padding: .15rem 0; }
+/* Animaciones extra: filas que entran desde la izquierda, tarjetas escalonadas,
+   banderas ondeando, burbujas y vapor, barras que crecen */
+.row.h.on { animation: slideL .35s steps(4) both; }
+@keyframes slideL { from { opacity: 0; transform: translateX(-2rem); } }
+.row.h.on:nth-child(2), .crd.h.on:nth-child(2), .fc.h.on:nth-child(2) { animation-delay: .1s; }
+.row.h.on:nth-child(3), .crd.h.on:nth-child(3), .fc.h.on:nth-child(3) { animation-delay: .2s; }
+.row.h.on:nth-child(4), .crd.h.on:nth-child(4), .fc.h.on:nth-child(4) { animation-delay: .3s; }
+.row.h.on:nth-child(5), .fc.h.on:nth-child(5) { animation-delay: .4s; }
+.row.h.on:nth-child(6), .fc.h.on:nth-child(6) { animation-delay: .5s; }
+.row.h.on:nth-child(7), .fc.h.on:nth-child(7) { animation-delay: .6s; }
+.flag.wave { animation: wave 1.6s steps(2) infinite; }
+@keyframes wave { 50% { transform: skewY(-4deg); } }
+.lab { position: relative; display: inline-block; }
+.bubs i { position: absolute; left: 45%; bottom: 75%; width: .5rem; height: .5rem; background: var(--g1); opacity: 0; animation: rise 1.8s steps(6) infinite; }
+.bubs i:nth-child(2) { left: 25%; animation-delay: .6s; }
+.bubs i:nth-child(3) { left: 62%; animation-delay: 1.2s; }
+@keyframes rise { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-3rem); } }
+.bars { display: flex; flex-direction: column; justify-content: center; gap: .25rem; flex: 1; }
+.br { display: grid; grid-template-columns: 12rem 1fr 2.4rem; align-items: center; gap: .6rem; }
+.br .t { line-height: 1; }
+.trk2 { height: .9rem; }
+.trk2 i { display: block; height: 100%; background: var(--g1); transition: width 1.2s steps(12); }
+.br.hl .trk2 i { background: var(--g0); }
+.br.hl .p2 { font-weight: 700; }
+.sev { height: 1.2rem; border: .2rem solid var(--g0); flex: none; position: relative; overflow: hidden; }
+.sev i { position: absolute; inset: 0; background: linear-gradient(90deg, var(--g3), var(--g2) 35%, var(--g1) 70%, var(--g0)); transform-origin: left; }
+.sev.on i { animation: grow 1.2s steps(12) both; }
+@keyframes grow { from { transform: scaleX(0); } }
+</style>
+</head>
+<body>
+<main id="stage" aria-live="polite">
+  <div id="hud"><span id="hl"></span><span id="hr"></span><i id="bar"></i></div>
+  <div id="view"></div>
+  <div id="dlg"><p id="txt"></p></div>
+  <nav id="menu" class="box" aria-label="Escenas"></nav>
+  <div id="wipe"></div>
+</main>
+
+<script>
+/* ===========================================
+   SPRITES
+   Cada sprite es una lista de filas. Los dígitos 0 a 3 son los
+   cuatro tonos de la pantalla (0 el más oscuro), las letras son
+   colores de bandera y el punto es transparente.
+   =========================================== */
+const COL = { '0': '#0f380f', '1': '#306230', '2': '#8bac0f', '3': '#9bbc0f',
+  r: '#c8343a', g: '#2f8a4c', w: '#ffffff', b: '#2b4a9b', c: '#5b9bd5', y: '#f2c230', n: '#7a4b25', k: '#111111' };
+const SPR = {
+  hero: ["..0000..",".000000.",".022222.",".202202.",".222222.","..1111..",".111111.","21111112",".111111.",".000000.",".00..00.",".00..00."],
+  mill: ["..3333..",".133331.",".122221.",".102201.",".122221.","..1221..",".000000.","20033002",".000000.",".000000.",".00..00.",".00..00."],
+  crown: ["0...0...0","00.000.00","000000000","022222220","023222320","022222220","000000000"],
+  mountain: ["...00...","..0330..","..0330..",".011110.",".011110.","01111110","01111110","00000000"],
+  cigarette: ["......2.",".....2..","......2.","........","00000000","03333110","00000000","........"],
+  bottle: ["...00...","...00...","..0330..",".033330.",".011110.",".011110.",".011110.",".000000."],
+  burger: ["........",".000000.","03232320","00000000","01111110","00000000","03333330",".000000."],
+  helmet: ["........","..0000..",".022220.","02222220","02222220","00000000","01111110","........"],
+  pill: ["........","........",".000000.","03330110","03330110",".000000.","........","........"],
+  coffee: ["..2..2..","...2..2.","........","000000..","01111000","011110.0","01111000",".0000..."],
+  book: ["........",".000000.","01111110","01333310","01111110","01111110","03333330",".000000."],
+  flask: ["..0000..","...00...","...00...","..0330..","..0330..",".011110.","01111110","00000000"],
+  heart: ["........",".00..00.","01100110","01111110","01111110",".011110.","..0110..","...00..."],
+  car: ["...000000...","..03303330..","011111111110","011111111112","000000000000",".0330..0330.","..00....00.."],
+  gavel: [".0000...",".0110...",".0000...","...00...","....00..",".....00.","0000000.","0111110."],
+  globe: ["..0000..",".022110.","02221110","01222110","01112210","01112220",".011220.","..0000.."],
+  bulb: ["..0000..",".033330.","03333330","03333330",".033330.","..0110..","..0000..","..0110.."],
+  chem: ["..0000..",".000000.",".022222.",".030030.",".222222.","..3113..",".331133.","23311332",".333333.",".000000.",".00..00.",".00..00."],
+  shield: ["00000000","01111110","01133110","01333310","01133110",".011110.","..0110..","...00..."],
+  skull: [".000000.","03333330","03033030","03333330",".033330.",".030030.",".000000.","........"],
+  dice: ["00000000","03333330","03033330","03300330","03300330","03333030","03333330","00000000"],
+  leaf: ["...00...","..0110..",".011110.",".011110.",".011110.","..0110..","...00...","...00..."],
+  scales: ["....0....","000000000","0...0...0","0...0...0","000.0.000","....0....","..00000.."],
+  /* Banderas de 15 x 9 */
+  mx: Array(3).fill('gggggwwwwwrrrrr').concat(['gggggwwnwwrrrrr', 'gggggwnnnwrrrrr', 'gggggwwgwwrrrrr'], Array(3).fill('gggggwwwwwrrrrr')),
+  pt: ['ggggggrrrrrrrrr', 'ggggggrrrrrrrrr', 'ggggyyyyrrrrrrr', 'ggggywwyrrrrrrr', 'ggggywwyrrrrrrr', 'ggggyyyyrrrrrrr', 'ggggggrrrrrrrrr', 'ggggggrrrrrrrrr', 'ggggggrrrrrrrrr'],
+  uy: ['wwwwwwwwwwwwwww', 'wwywwbbbbbbbbbb', 'wyyywwwwwwwwwww', 'wwywwbbbbbbbbbb', 'wwwwwwwwwwwwwww', 'bbbbbbbbbbbbbbb', 'wwwwwwwwwwwwwww', 'bbbbbbbbbbbbbbb', 'wwwwwwwwwwwwwww'],
+  ca: ['wwwwwww', 'wwwrwww', 'rwrrrwr', 'wrrrrrw', 'wwrrrww', 'wwwrwww', 'wwwrwww', 'wwwwwww', 'wwwwwww'].map(m => 'rrrr' + m + 'rrrr'),
+  us: ['bwbwbwbrrrrrrrr', 'bbbbbbbwwwwwwww', 'bwbwbwbrrrrrrrr', 'bbbbbbbwwwwwwww', 'bwbwbwbrrrrrrrr', 'wwwwwwwwwwwwwww', 'rrrrrrrrrrrrrrr', 'wwwwwwwwwwwwwww', 'rrrrrrrrrrrrrrr'],
+  uk: ['wbbbbbwrwbbbbbw', 'bwbbbbwrwbbbbwb', 'bbwbbbwrwbbbwbb', 'wwwwwwwrwwwwwww', 'rrrrrrrrrrrrrrr', 'wwwwwwwrwwwwwww', 'bbwbbbwrwbbbwbb', 'bwbbbbwrwbbbbwb', 'wbbbbbwrwbbbbbw'],
+  nl: Array(3).fill('rrrrrrrrrrrrrrr').concat(Array(3).fill('wwwwwwwwwwwwwww'), Array(3).fill('bbbbbbbbbbbbbbb')),
+  be: Array(9).fill('kkkkkyyyyyrrrrr'),
+  co: Array(5).fill('yyyyyyyyyyyyyyy').concat(Array(2).fill('bbbbbbbbbbbbbbb'), Array(2).fill('rrrrrrrrrrrrrrr')),
+  ec: ['yyyyyyyyyyyyyyy', 'yyyyyyyyyyyyyyy', 'yyyyyyyyyyyyyyy', 'yyyyyyynyyyyyyy', 'yyyyyynwnyyyyyy', 'bbbbbbnwnbbbbbb', 'bbbbbbbnbbbbbbb', 'rrrrrrrrrrrrrrr', 'rrrrrrrrrrrrrrr'],
+  es: ['rrrrrrrrrrrrrrr', 'rrrrrrrrrrrrrrr', 'yyyyyyyyyyyyyyy', 'yyyyyyyyyyyyyyy', 'yyyrryyyyyyyyyy', 'yyyyyyyyyyyyyyy', 'yyyyyyyyyyyyyyy', 'rrrrrrrrrrrrrrr', 'rrrrrrrrrrrrrrr'],
+  ch: ['rrrrrrrrrrrrrrr', 'rrrrrrwwwrrrrrr', 'rrrrrrwwwrrrrrr', 'rrrwwwwwwwwwrrr', 'rrrwwwwwwwwwrrr', 'rrrwwwwwwwwwrrr', 'rrrrrrwwwrrrrrr', 'rrrrrrwwwrrrrrr', 'rrrrrrrrrrrrrrr'],
+  un: ['ccccccccccccccc', 'ccccccccccccccc', 'ccccccwwwcccccc', 'cccccwcccwccccc', 'cccccwcwcwccccc', 'cccccwcccwccccc', 'ccccccwwwcccccc', 'ccccccccccccccc', 'ccccccccccccccc']
+};
+/* ic(nombre, escala, clase) devuelve el canvas de un sprite */
+const ic = (s, k = 2, c = '') => `<canvas class="spr ${c}" data-s="${s}" data-k="${k}"></canvas>`;
+function drawSprites(root) {
+  root.querySelectorAll('canvas[data-s]').forEach(c => {
+    const rows = SPR[c.dataset.s]; c.width = rows[0].length; c.height = rows.length;
+    c.style.width = (rows[0].length * c.dataset.k / 10) + 'rem';
+    const x = c.getContext('2d');
+    rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') { x.fillStyle = COL[ch]; x.fillRect(i, j, 1, 1); } }));
+  });
+}
+
+/* ===========================================
+   PLANTILLAS DE ESCENA
+   =========================================== */
+const flag = (f, label) => `<div class="fl">${ic(f, 3.4, 'flag wave')}<b class="tag neg">${label}</b></div>`;
+const hdr = (title, f) => `<div class="hdr">${f ? ic(f, 2.4, 'flag') : ''}<div class="hd">${title}</div></div>`;
+const row = (id, icon, name, tag = '', neg = false) => `<div class="row h" id="${id}"><span class="ico">${ic(icon)}</span><span class="t">${name}</span>${tag ? `<b class="tag ${neg ? 'neg' : ''}">${tag}</b>` : ''}</div>`;
+const crd = (id, top, title, body, ex = '') => `<div class="box crd h" id="${id}">${top}<p class="p2 sm">${title}</p><p class="t">${body}</p>${ex ? `<p class="t ex">${ex}</p>` : ''}</div>`;
+/* Recuadro con icono a la izquierda */
+const LI = (icon, label, text) => `<div class="def">${ic(icon, 3)}<div>${label ? `<p class="p2 sm">${label}</p>` : ''}<p class="t">${text}</p></div></div>`;
+/* Lista con iconos */
+const IL = items => items.map(([i, t]) => `<p class="t ir">${ic(i, 2)}<span>${t}</span></p>`).join('');
+const L = (label, text) => `<p class="p2 sm">${label}</p><p class="t">${text}</p>`;
+/* Dos recuadros lado a lado (#a y #b) y uno de cierre abajo (#c) */
+const two = (title, a, b, c = '') => `<div class="pad">${hdr(title)}<div class="cols" style="--n:2">
+  <div class="box h" id="a">${a}</div><div class="box h" id="b">${b}</div></div>${c ? `<div class="box h" id="c" style="flex:none">${c}</div>` : ''}</div>`;
+const kase = (n, text) => `<div class="box case h" id="k${n}"><p class="t sm"><b class="tag neg">${n}</b> ${text}</p></div>`;
+
+/* Mapa: el personaje camina del capítulo anterior al capítulo n */
+const PLACES = ['EL DILEMA', 'RIESGO Y PELIGRO', 'HISTORIA', 'MARCO LEGAL', 'POSTURA ÉTICA', 'MÁS ALLÁ DE LAS DROGAS'];
+const PICON = ['scales', 'flask', 'book', 'gavel', 'bulb', 'globe'];
+const NX = i => 4.4 + i * 7.84, NY = i => (i % 2 ? 11.2 : 6.6);
+function map(n, say) {
+  const from = Math.max(0, n - 1);
+  const nodes = PLACES.map((p, i) => `<div class="node ${i < n ? 'done' : i === n ? 'cur' : ''}" style="left:${NX(i) - 1.5}rem;top:${NY(i) - 1.5}rem;animation-delay:${i * .1}s">${ic(PICON[i], 2.5)}</div><p class="nl p2 sm" style="left:${NX(i) - 3.8}rem;top:${NY(i) + 1.9}rem">${p}</p>`).join('');
+  const pts = PLACES.map((p, i) => `${NX(i) * 10},${NY(i) * 10}`).join(' ');
+  const hx = i => (NX(i) - 1.2) + 'rem', hy = i => (NY(i) - 5.4) + 'rem';
+  return { ch: 'RECORRIDO', name: 'Recorrido: ' + PLACES[n][0] + PLACES[n].slice(1).toLowerCase(), html: `<div class="map"><svg viewBox="0 0 480 180" shape-rendering="crispEdges"><polyline points="${pts}" fill="none" stroke="#0f380f" stroke-width="2" stroke-dasharray="4 4"/></svg><h2 class="p2">CAPÍTULO ${n + 1} DE 6</h2>${nodes}<div id="mh" style="left:${hx(from)};top:${hy(from)}">${ic('hero', 3, 'bob')}</div></div>`,
+    beats: [{ say, css: { '#mh': { left: hx(n), top: hy(n) } } }] };
+}
+
+/* Puntajes de daño total (0-100), Nutt, King y Phillips, The Lancet, 2010, figura 2. El tercer valor marca las sustancias legales. */
+const NUTT = [['ALCOHOL', 72, 1], ['HEROÍNA', 55], ['CRACK', 54], ['METANFETAMINA', 33], ['COCAÍNA', 27], ['TABACO', 26, 1], ['CANNABIS', 20], ['ÉXTASIS (MDMA)', 9], ['LSD', 7], ['HONGOS', 6]];
+
+/* ===========================================
+   ESCENAS
+   Cada escena tiene html y una lista de pasos (beats). Un paso puede:
+   say (texto de la caja inferior), on/off (mostrar u ocultar por
+   selector), css, set (cambiar texto) y add (añadir clase).
+   Para editar el contenido basta con cambiar los textos de aquí.
+   =========================================== */
+const SC = [
+/* --- Portada --- */
+{ ch: 'INICIO', name: 'Portada', full: 1, html: `<div class="ttl">
+  <p class="p2 sm">DILEMAS BIOÉTICOS</p>
+  <h1>EL DERECHO AL DAÑO<br>AUTOINFLIGIDO</h1>
+  <p class="t">Autonomía, paternalismo y el uso recreacional de las drogas</p>
+  <div class="icons">${ic('pill', 4)}${ic('flask', 4)}${ic('hero', 6, 'bob')}${ic('scales', 4)}${ic('shield', 4)}</div>
+  <p class="p2 sm blink">PULSA ESPACIO PARA EMPEZAR</p></div>`, beats: [{}] },
+
+/* --- Introducción --- */
+{ ch: 'INTRODUCCIÓN', name: 'Por qué este tema', html: `<div class="pad">${hdr('POR QUÉ ESTE TEMA')}<div class="cols">
+  ${crd('i1', `<div class="icons" style="gap:.6rem">${ic('bottle', 3)}${ic('cigarette', 3)}${ic('pill', 3)}</div>`, 'UNA DESCONEXIÓN', 'A un adulto se le permiten riesgos predecibles, como el alcohol o el tabaco, pero no el uso recreacional de drogas.')}
+  ${crd('i2', ic('scales', 3.5), 'PATERNALISMO', 'Los Estados restringen decisiones sobre el propio cuerpo a partir de criterios muchas veces arbitrarios.')}
+  ${crd('i3', `<div class="icons" style="gap:.8rem">${ic('chem', 2.6, 'bob')}<span class="lab">${ic('flask', 3)}<span class="bubs"><i></i><i></i><i></i></span></span></div>`, 'INGENIERÍA QUÍMICA', 'La carrera enseña a distinguir riesgo de peligro. La toxicidad depende de la dosis, la pureza, la forma de consumo y la exposición.')}
+  </div></div>`, beats: [
+  { on: '#i1,#i2', say: 'Este tema siempre me ha interesado por la desconexión entre el marco ético y el legal, y por el paternalismo que los Estados ejercen a partir de decisiones arbitrarias.' },
+  { on: '#i3', say: 'Como estudiante de ingeniería química, me parece extraño clasificar un químico como seguro o prohibido sin considerar exposición, concentración, pureza, probabilidad y consecuencia.' }] },
+
+/* --- Capítulo 1: el dilema --- */
+map(0, 'Capítulo 1. El dilema entre autonomía y paternalismo.'),
+{ ch: '1 EL DILEMA', name: 'Riesgos que un adulto puede elegir', html: `<div class="pad">${hdr('RIESGOS QUE UN ADULTO PUEDE ELEGIR')}<div class="box list">
+  ${row('r1', 'mountain', 'Deportes extremos', 'PERMITIDO')}${row('r2', 'cigarette', 'Tabaco', 'PERMITIDO')}${row('r3', 'bottle', 'Alcohol', 'PERMITIDO')}
+  ${row('r4', 'burger', 'Dietas poco saludables', 'PERMITIDO')}${row('r5', 'helmet', 'Profesiones peligrosas', 'PERMITIDO')}${row('r6', 'pill', 'Drogas recreacionales', 'PROHIBIDO', true)}
+  </div><div class="ask box h" id="q"><p class="p2">¿QUÉ DISTINGUE MORALMENTE A LA ÚLTIMA FILA?</p></div></div>`, beats: [
+  { on: '#r1,#r2,#r3,#r4,#r5', say: 'Un adulto competente puede tomar muchas decisiones que, de forma predecible, le causan daño. Deportes extremos, tabaco, alcohol, dietas poco saludables o profesiones peligrosas.' },
+  { on: '#r6', say: 'El uso recreacional de las drogas, en cambio, está prohibido en prácticamente todos los países del mundo.' },
+  { on: '#q', say: 'Esa desconexión entre el marco ético y el marco legal es el tema de esta presentación.' }] },
+{ ch: '1 EL DILEMA', name: 'Conceptos centrales', html: `<div class="pad">${hdr('CONCEPTOS CENTRALES')}<div class="cols">
+  ${crd('d1', ic('scales', 4), 'PATERNALISMO', 'Aplicar la autoridad, la protección y las decisiones propias de un padre de familia a las relaciones sociales, políticas, laborales o médicas.')}
+  ${crd('d2', ic('hero', 3), 'AUTONOMÍA', 'Capacidad de una persona para tomar decisiones libres e informadas sobre su propia vida y su propio cuerpo.')}
+  ${crd('d3', ic('heart', 4), 'DAÑO AUTOINFLIGIDO', 'Daño físico, psicológico o social que una persona se causa a sí misma por sus propias decisiones o acciones.')}</div></div>`, beats: [
+  { on: '#d1,#d2,#d3', say: 'Tres conceptos ordenan la discusión. El paternalismo del Estado frente a la autonomía de la persona adulta, con el daño autoinfligido como lo que está en disputa.' },
+  { say: 'La pregunta es hasta dónde puede el Estado decidir qué riesgos acepta un adulto sobre su propio cuerpo, sobre todo cuando esas decisiones parten de criterios arbitrarios.' }] },
+
+{ ch: '1 EL DILEMA', name: 'Casos para discutir', html: `<div class="pad">${hdr('CASOS PARA DISCUTIR: ¿INTERVENIR O RESPETAR?')}<div class="cols" style="--n:3;grid-template-rows:1fr 1fr;gap:.6rem">
+  ${kase(1, 'Una adulta informada sobre dosis y efectos consume una sustancia en su casa.')}
+  ${kase(2, 'La misma persona, con la misma dosis, maneja de regreso a casa.')}
+  ${kase(3, 'Un adulto con años de dependencia quiere dejar de consumir y no lo consigue.')}
+  ${kase(4, 'Alguien compra una pastilla en una fiesta sin saber qué contiene.')}
+  ${kase(5, 'Un adulto rechaza por motivos religiosos una transfusión que le salvaría la vida.')}
+  ${kase(6, 'Una paciente con una enfermedad terminal pide a su médico que la ayude a morir.')}
+  </div></div>`, beats: [
+  { on: '#k1,#k2,#k3,#k4', say: 'Seis casos para discutir antes de entrar al tema. En cada uno, ¿debería intervenir el Estado o respetar la decisión?' },
+  { on: '#k5,#k6', say: 'Los dos últimos salen del tema de las drogas. Volveremos a ellos al final de la presentación.' }] },
+
+/* --- Capítulo 2: riesgo y peligro --- */
+map(1, 'Capítulo 2. Qué son las sustancias psicoactivas, qué riesgos tienen y cómo se reducen.'),
+{ ch: '2 RIESGO Y PELIGRO', name: 'Clases de sustancias psicoactivas', html: `<div class="pad">${hdr('CLASES DE SUSTANCIAS PSICOACTIVAS')}<div class="cols" style="--n:4">
+  ${crd('c1', ic('heart', 4, 'slow'), 'DEPRESIVOS', 'Ralentizan el sistema nervioso central.', 'Alcohol, benzodiazepinas, barbitúricos')}
+  ${crd('c2', ic('heart', 4, 'fast'), 'ESTIMULANTES', 'Aceleran el sistema nervioso central.', 'Cafeína, cocaína, anfetaminas')}
+  ${crd('c3', ic('heart', 4, 'wob'), 'ALUCINÓGENOS', 'Distorsionan la percepción.', 'LSD y otros psicodélicos')}
+  ${crd('c4', '<p class="p2" style="font-size:1.6rem;line-height:3.2rem">???</p>', 'SIN CLASE CLARA', 'Disociativos y empatógenos.', 'Ketamina, MDMA')}
+  </div></div>`, beats: [
+  { say: 'El uso recreacional busca inducir un estado de consciencia alterado, usualmente por placer o como pasatiempo.' },
+  { on: '#c1,#c2,#c3', say: 'Las sustancias suelen dividirse en tres categorías. Los depresivos ralentizan el sistema nervioso central, los estimulantes lo aceleran y los alucinógenos distorsionan la percepción.' },
+  { on: '#c4', say: 'Disociativos y empatógenos no encajan claramente en ninguna, así que la división funciona como clasificación general.' }] },
+{ ch: '2 RIESGO Y PELIGRO', name: 'Percepción social por sustancia', html: `<div class="pad">${hdr('PERCEPCIÓN SOCIAL POR SUSTANCIA')}<div class="cols">
+  <div class="grp h" id="g1"><b class="tag">CAFEÍNA</b><b class="tag">ALCOHOL</b><b class="tag">TABACO</b></div>
+  <div class="grp h" id="g2"><b class="tag">CANNABIS</b><b class="tag">HACHÍS</b></div>
+  <div class="grp h" id="g3"><b class="tag neg">COCAÍNA</b><b class="tag neg">OPIOIDES</b><b class="tag neg">MDMA</b><b class="tag neg">ANFETAMINAS</b><b class="tag neg">PSICODÉLICOS</b><b class="tag neg">BENZODIAZEPINAS</b><b class="tag neg">BARBITÚRICOS</b></div>
+  </div><div class="scale"><i></i><i></i><i></i><i></i></div><div class="ends p2 sm"><span>USO COTIDIANO</span><span>ESTIGMA MARCADO</span></div></div>`, beats: [
+  { on: '#g1,#g2', say: 'La percepción social del consumo varía según la sustancia. Cafeína, alcohol y tabaco son de uso común; el cannabis y el hachís se usan con menor frecuencia.' },
+  { on: '#g3', say: 'Las sustancias con más restricciones legales cargan un estigma social mucho más marcado.' }] },
+{ ch: '2 RIESGO Y PELIGRO', name: 'Factores del consumo', html: `<div class="pad">${hdr('FACTORES DEL CONSUMO (MODELO BIOPSICOSOCIAL)')}<div class="cols">
+  ${crd('b1', '', 'BIOLÓGICOS', 'Condiciones genéticas<br>Envejecimiento<br>Automedicación')}
+  ${crd('b2', '', 'PSICOLÓGICOS', 'Tipo de personalidad<br>Depresión<br>Curiosidad y aburrimiento')}
+  ${crd('b3', '', 'SOCIALES', 'Pertenencia a un grupo<br>Rebeldía<br>Situación socioeconómica')}
+  </div><div class="box def h" id="pl" style="flex:none"><p class="p2 sm">MARTIN A. PLANT</p><b class="tag neg">AMISTAD</b><b class="tag neg">PLACER</b><b class="tag neg">ESTATUS</b><b class="tag neg">SUBCULTURA</b></div></div>`, beats: [
+  { on: '#b1,#b2,#b3', say: 'Ningún factor explica por sí solo el consumo. Los expertos aplican un modelo biopsicosocial que combina factores biológicos, psicológicos y sociales.' },
+  { on: '#pl', say: 'Según Martin A. Plant, el consumo puede formar parte de una subcultura asociada con estatus, amistad y placer. Para el propio usuario puede ser una afirmación positiva más que una experiencia negativa.' }] },
+{ ch: '2 RIESGO Y PELIGRO', name: 'Peligro y riesgo', html: `<div class="pad">${hdr('PELIGRO Y RIESGO')}<div class="cols" style="--n:2;flex:none">
+  <div class="box def h" id="pe">${ic('skull', 3)}<div><p class="p2 sm">PELIGRO</p><p class="t">Fuente, situación o acto con potencial de causar daño.</p></div></div>
+  <div class="box def h" id="ri">${ic('dice', 3)}<div><p class="p2 sm">RIESGO</p><p class="t">Probabilidad de que ese peligro se materialice.</p></div></div></div>
+  <div class="box mach h" id="ma"><div class="dials">
+  ${[['ds', 'DOSIS'], ['ad', 'ADULTERANTES'], ['vi', 'VÍA DE CONSUMO'], ['fr', 'FRECUENCIA'], ['mz', 'INTERACCIONES']].map(([id, l]) => `<div class="dial"><span class="p2 sm">${l}</span><div class="hp"><i id="${id}" style="width:10%"></i></div></div>`).join('')}
+  </div><div><p class="p2 sm">RIESGO</p><div class="hp big"><i id="rk" style="width:5%"></i></div><p class="p2 sm" style="margin-top:.6rem">PELIGRO: SIN CAMBIO</p></div></div></div>`, beats: [
+  { on: '#pe,#ri', say: 'El peligro es el potencial de causar daño. El riesgo es la probabilidad de que ese daño ocurra bajo determinadas condiciones.' },
+  { on: '#ma', css: { '#ds': { width: '90%' }, '#rk': { width: '38%' } }, say: 'Al subir la dosis, sube el riesgo.' },
+  { css: { '#ad': { width: '85%' }, '#rk': { width: '62%' } }, say: 'Con una pureza desconocida, el usuario ya no sabe qué dosis está tomando ni qué más contiene la sustancia.' },
+  { css: { '#vi': { width: '80%' }, '#fr': { width: '90%' }, '#mz': { width: '75%' }, '#rk': { width: '96%' } }, say: 'La vía de consumo, la frecuencia y las interacciones con otras sustancias completan el cálculo. El peligro no cambió en ningún momento.' },
+  { say: 'Este es el criterio de la ingeniería química: evaluar cuánto riesgo implica una sustancia y en qué condiciones, en lugar de clasificarla como segura o prohibida.' }] },
+{ ch: '2 RIESGO Y PELIGRO', name: 'Daños asociados al consumo', html: `<div class="pad">${hdr('DAÑOS ASOCIADOS AL CONSUMO')}<div class="cols" style="--n:2">
+  ${crd('du', ic('heart', 4), 'AL USUARIO', 'Adictividad<br>Daño físico<br>Efectos a corto y largo plazo')}
+  ${crd('dt', ic('car', 4), 'A TERCEROS', 'Accidentes vehiculares<br>Altercados violentos<br>Violencia doméstica')}
+  </div></div>`, beats: [
+  { on: '#du,#dt', say: 'El daño puede recaer sobre el usuario, por la adictividad o el daño físico, y sobre las personas con las que interactúa, por accidentes o violencia.' },
+  { add: { '#du': 'hi' }, say: 'El dilema de esta presentación está en la primera columna. El daño a terceros se justifica con otro argumento.' }] },
+{ ch: '2 RIESGO Y PELIGRO', name: 'Adicción y capacidad de decisión', html: `<div class="pad">${hdr('ADICCIÓN Y CAPACIDAD DE DECISIÓN')}<div class="cols" style="--n:2">
+  <div class="box h" id="cd">${L('CAPACIDAD DE DECISIÓN', 'Habilidad para comprender información, evaluar consecuencias y tomar una decisión razonada.')}<div class="hp" style="margin-top:.8rem"><i id="cap" style="width:100%"></i></div></div>
+  <div class="box h" id="adi">${L('ADICCIÓN', 'Dificultad persistente para controlar el consumo de una sustancia a pesar de sus consecuencias negativas.')}</div></div></div>`, beats: [
+  { on: '#cd,#adi', say: 'Una decisión autónoma requiere comprender los riesgos. El potencial adictivo varía entre sustancias, usuarios y patrones de consumo.' },
+  { css: { '#cap': { width: '25%' } }, say: 'La adicción puede reducir la capacidad de decisión. Una decisión que fue autónoma al inicio puede terminar limitando la autonomía futura.' }] },
+{ ch: '2 RIESGO Y PELIGRO', name: 'Reducción de daños y uso responsable', html: `<div class="pad">${hdr('REDUCCIÓN DE DAÑOS Y USO RESPONSABLE')}<div class="box list">
+  ${row('h1', 'book', 'Educación sobre efectos y riesgos')}${row('h2', 'dice', 'Información sobre dosis e interacciones')}${row('h3', 'flask', 'Análisis de sustancias')}
+  ${row('h4', 'heart', 'Prevención de enfermedades')}${row('h5', 'car', 'Sobriedad para conducir, nadar u operar maquinaria')}</div></div>`, beats: [
+  { on: '#h1,#h2,#h3,#h4', say: 'La reducción de daños busca disminuir las consecuencias negativas del consumo sin exigir que la persona deje de consumir.' },
+  { on: '#h5', say: 'El uso responsable pide abstenerse en actividades peligrosas sin sobriedad. Ambos enfoques aceptan la autonomía del usuario y se apoyan en el consentimiento informado.' }] },
+
+/* --- Capítulo 3: historia --- */
+map(2, 'Capítulo 3. Antecedentes históricos de la prohibición.'),
+{ ch: '3 HISTORIA', name: 'Prohibición del café', html: `<div class="pad">${hdr('IMPERIO OTOMANO, SIGLO XVII')}<div class="cols" style="align-items:center">
+  <div class="ctr h" id="mu">${ic('crown', 5)}<p class="p2 sm">MURAD IV</p></div>
+  <div class="ctr"><span class="lab">${ic('coffee', 8)}<span class="bubs"><i></i><i></i><i></i></span></span><b class="tag neg h" id="ban">PROHIBIDO</b><b class="tag h" id="leg">HOY: USO COTIDIANO</b></div>
+  <div class="box h" id="cf">${L('CAFETERÍAS', 'Lugares de reunión y discusión política, vistos con sospecha.')}</div></div></div>`, beats: [
+  { on: '#mu,#ban,#cf', say: 'Murad IV intentó prohibir el café con castigos extremadamente severos. Las cafeterías eran lugares de reunión y discusión política.' },
+  { off: '#ban', on: '#leg', say: 'La prohibición no fue permanente. Una sustancia que hoy es completamente normal llegó a prohibirse por el contexto cultural y político de su época.' }] },
+{ ch: '3 HISTORIA', name: 'San Francisco, 1875', html: `<div class="pad">${hdr('SAN FRANCISCO, 1875', 'us')}
+  <div class="box h" id="qt"><p class="t">«Muchas mujeres y mujeres jóvenes, al igual que hombres jóvenes de familias respetables, estaban siendo persuadidas a visitar antros de opio, donde estaban siendo arruinados moralmente y de otras maneras».</p></div>
+  <div class="box list">${row('o1', 'pill', 'Fumar opio, práctica asociada a inmigrantes chinos', 'RESTRINGIDO', true)}${row('o2', 'bottle', 'Preparados medicinales de opio de otros sectores', 'OTRO TRATO')}</div></div>`, beats: [
+  { on: '#qt', say: 'Una de las primeras regulaciones de Estados Unidos se dirigió a los establecimientos donde se fumaba opio. La razón citada fue la ruina moral.' },
+  { on: '#o1,#o2', say: 'La medida apuntaba a una práctica asociada con los inmigrantes chinos. Los preparados medicinales de opio, usados por otros sectores, no recibieron necesariamente el mismo trato.' }] },
+{ ch: '3 HISTORIA', name: 'Control internacional, 1909-1988', html: `<div class="pad">${hdr('CONTROL INTERNACIONAL, 1909-1988')}<div class="tl"><div class="trk"><div id="th">${ic('hero', 2.5, 'bob')}</div></div><div class="ln"></div><div class="cols" style="--n:6;gap:.4rem">
+  ${[['pill', '1909', 'SHANGHÁI', 'Comisión Internacional del Opio'], ['nl', '1912', 'LA HAYA', 'Primer tratado vinculante. Suma morfina y cocaína'], ['us', '1914', 'EE. UU.', 'Harrison Act: registro e impuestos'], ['uk', '1920', 'REINO UNIDO', 'Dangerous Drugs Act'], ['un', '1961', 'ONU', 'Convención Única sobre Estupefacientes'], ['un', '1971-88', 'ONU', 'Psicotrópicos y tráfico ilícito']].map(([f, y, p, d], i) => `<div class="tc h" id="t${i + 1}">${f === 'pill' ? ic(f, 2.4) : ic(f, 2.4, 'flag')}<b class="tag neg">${y}</b><p class="p2 sm">${p}</p><p class="t sm">${d}</p></div>`).join('')}
+  </div></div></div>`, beats: [
+  { on: '#t1,#t2', css: { '#th': { left: '25%' } }, say: 'En 1909 la Comisión de Shanghái discute el opio por primera vez a nivel internacional. La Convención de La Haya de 1912 amplía el control a la morfina y la cocaína.' },
+  { on: '#t3,#t4', css: { '#th': { left: '58.33%' } }, say: 'El Harrison Act de 1914 nace como medida fiscal y la Suprema Corte lo confirma en 1919. El Reino Unido convierte sus restricciones de guerra en el Dangerous Drugs Act de 1920.' },
+  { on: '#t5,#t6', css: { '#th': { left: '91.66%' } }, say: 'Tres tratados de la ONU forman la base del sistema actual. Controlan la producción, distribución y comercio, y permiten el uso médico y científico.' },
+  { say: 'Se pasó de prohibiciones locales a un sistema internacional, aunque cada país conserva diferencias importantes en su trato al consumidor.' }] },
+
+{ ch: '3 HISTORIA', name: 'Inercia moral', html: `<div class="pad">${hdr('RAZONES CITADAS PARA PROHIBIR')}<div class="box list">
+  ${row('n1', 'coffee', 'Café, Imperio Otomano, siglo XVII', 'POLÍTICA')}${row('n2', 'pill', 'Opio fumado, San Francisco, 1875', 'MORAL')}
+  ${row('n3', 'book', 'Harrison Act, Estados Unidos, 1914', 'FISCAL')}${row('n4', 'helmet', 'Cocaína y opiáceos, Reino Unido, 1916', 'MILITAR')}</div>
+  <div class="box def h" id="n5">${ic('flask', 3)}<p class="t">En ninguno de estos casos la razón principal fue una evaluación del riesgo de cada sustancia.</p></div></div>`, beats: [
+  { on: '#n1,#n2,#n3,#n4', say: 'Las razones citadas en cada episodio fueron políticas, morales, fiscales o militares.' },
+  { on: '#n5', say: 'Las clasificaciones que nacieron así se heredaron después por inercia moral, más que por nueva evidencia científica.' }] },
+{ ch: '3 HISTORIA', name: 'Daño medido y estatus legal', html: `<div class="pad">${hdr('DAÑO TOTAL, DE 0 A 100 (NUTT ET AL., 2010)')}<div class="bars">
+  ${NUTT.map(([n, v, legal], i) => `<div class="br ${legal ? 'lg' : ''}"><span class="p2 sm">${n}${legal ? ' <b class="tag neg h lt">LEGAL</b>' : ''}</span><div class="trk2"><i id="nb${i}" style="width:0;transition-delay:${i * .08}s"></i></div><span class="t h vl">${v}</span></div>`).join('')}
+  </div></div>`, beats: [
+  { on: '.vl', css: Object.fromEntries(NUTT.map(([n, v], i) => ['#nb' + i, { width: (v / 75 * 100) + '%' }])), say: 'En 2010 un panel de expertos dirigido por David Nutt calificó veinte drogas según su daño al usuario y a terceros. Aquí aparecen diez de ellas.' },
+  { on: '.lt', add: { '.br.lg': 'hl' }, say: 'El alcohol obtuvo el puntaje más alto, y el tabaco quedó junto a la cocaína. Los autores concluyeron que la clasificación legal británica prácticamente no se relaciona con el daño medido.' }] },
+
+/* --- Capítulo 4: marco legal --- */
+map(3, 'Capítulo 4. Marco legal actual en México y en otros países.'),
+{ ch: '4 MARCO LEGAL', name: 'Prohibición, despenalización y legalización', html: `<div class="pad">${hdr('TRES FIGURAS LEGALES')}<div class="cols">
+  ${crd('f1', '<div class="door d1"></div>', 'PROHIBICIÓN', 'La ley impide producir, poseer, vender o consumir, con sanción penal.')}
+  ${crd('f2', '<div class="door d2"></div>', 'DESPENALIZACIÓN', 'Se elimina o reduce la sanción penal de una conducta, sin volverla completamente legal.')}
+  ${crd('f3', '<div class="door d3"></div>', 'LEGALIZACIÓN', 'La actividad se permite dentro de un marco de reglas y controles.')}</div></div>`, beats: [
+  { on: '#f1,#f2,#f3', say: 'La prohibición castiga penalmente. La despenalización quita o reduce esa sanción, normalmente a la posesión personal. La legalización permite la actividad bajo reglas y controles.' },
+  { say: 'Un país puede despenalizar el consumo personal y mantener completamente prohibidas la producción y la venta.' }] },
+{ ch: '4 MARCO LEGAL', name: 'Ley General de Salud', html: `<div class="pad">${hdr('LEY GENERAL DE SALUD', 'mx')}<div class="cols" style="--n:2"><div class="stack">
+  <div class="box h" id="a1">${L('ARTÍCULO 478', 'Sin acción penal contra el consumidor que posea cantidades iguales o menores a la tabla, para estricto consumo personal.')}</div>
+  <div class="box h" id="a2"><p class="p2 sm" style="margin-bottom:.4rem">TABLA DEL ARTÍCULO 479</p><div class="tags"><b class="tag">CANNABIS</b><b class="tag">COCAÍNA</b><b class="tag">HEROÍNA</b><b class="tag">OPIO</b><b class="tag">LSD</b><b class="tag">MDMA</b><b class="tag">METANFETAMINA</b></div></div></div>
+  <div class="box crd h" id="sh" style="justify-content:center"><div class="awn"></div><p class="p2 sm">MERCADO LEGAL</p><b class="tag neg">INEXISTENTE</b><p class="t">Producir, transportar, comerciar y suministrar sin autorización sigue prohibido.</p></div></div></div>`, beats: [
+  { on: '#a1,#a2', say: 'En México no se ejerce acción penal contra quien posea pequeñas cantidades para consumo personal. La tabla del artículo 479 fija los máximos para cada sustancia.' },
+  { on: '#sh', say: 'Ninguna de estas sustancias es legal. El Estado reconoce al consumidor y le fija una cantidad, sin ofrecerle una forma legal de obtenerla.' }] },
+{ ch: '4 MARCO LEGAL', name: 'Cannabis y la Suprema Corte', html: `<div class="pad">${hdr('CANNABIS Y LA SUPREMA CORTE', 'mx')}<div class="cols" style="--n:2"><div class="stack">
+  <div class="box h" id="y1"><b class="tag neg">2015</b><p class="t" style="margin-top:.3rem">La Corte empieza a resolver casos de autoconsumo recreativo.</p></div>
+  <div class="box h" id="y2"><b class="tag neg">2021</b><p class="t" style="margin-top:.3rem">Declaratoria General de Inconstitucionalidad 1/2018. COFEPRIS debe autorizar a personas adultas.</p></div></div>
+  <div class="stack"><div class="box def h" id="it">${ic('leaf', 4)}<div>${L('FUNDAMENTO', 'Derecho al libre desarrollo de la personalidad.')}</div></div>
+  <div class="box h" id="lm"><p class="p2 sm" style="margin-bottom:.4rem">LÍMITES</p><div class="tags"><b class="tag">SIN VENTA</b><b class="tag">SIN AFECTAR A TERCEROS</b><b class="tag">LEJOS DE MENORES</b><b class="tag">SIN CONDUCIR</b></div></div></div></div></div>`, beats: [
+  { on: '#y1,#y2,#it', say: 'La Suprema Corte determinó que la prohibición absoluta limitaba de forma desproporcionada el libre desarrollo de la personalidad. En 2021 la eliminó para el autoconsumo.' },
+  { on: '#lm', say: 'La autorización no crea un mercado ni permite afectar a terceros. La Corte usó la autonomía como fundamento y el daño a terceros como límite.' }] },
+{ ch: '4 MARCO LEGAL', name: 'Modelos de regulación por país', html: `<div class="pad">${hdr('MODELOS DE REGULACIÓN POR PAÍS')}<div class="cols" style="--n:4">
+  ${crd('m1', flag('mx', 'VIGENTE'), 'MÉXICO', 'Posesión mínima sin acción penal. Autoconsumo de cannabis con autorización.')}
+  ${crd('m2', flag('pt', '2001'), 'PORTUGAL', 'Posesión para consumo personal por la vía administrativa.')}
+  ${crd('m3', flag('uy', '2013'), 'URUGUAY', 'Ley 19.172. Acceso regulado al cannabis para adultos.')}
+  ${crd('m4', flag('ca', '2018'), 'CANADÁ', 'Cannabis Act. Mercado legal regulado para adultos.')}</div></div>`, beats: [
+  { on: '#m1,#m2,#m3,#m4', say: 'La regulación no se limita a legalidad o prohibición total. México tolera la posesión mínima, Portugal despenalizó la posesión personal, y Uruguay y Canadá regularon el mercado de cannabis.' },
+  { say: 'La clasificación legal ha cambiado con el contexto histórico, social y político. Varios países vuelven a separar el consumo personal, el tráfico y la producción regulada.' }] },
+
+/* --- Capítulo 5: postura ética --- */
+map(4, 'Capítulo 5. Postura ética.'),
+{ ch: '5 POSTURA ÉTICA', name: 'Tesis', html: `<div class="pad">${hdr('TESIS')}<div class="box ctr" style="flex:1;padding:1rem 1.6rem"><p class="t thesis">La existencia de un riesgo para la salud no es por sí sola una justificación ética suficiente para eliminar la autonomía de una persona adulta.</p></div>
+  <div class="cols" style="--n:5;flex:none;gap:.4rem">${[['heart', 'SALUD'], ['book', 'CONSENTIMIENTO'], ['car', 'TERCEROS'], ['pill', 'ADICCIÓN'], ['gavel', 'PROHIBICIÓN']].map(([i, l], k) => `<div class="fc h ag">${ic(i, 3)}<b class="tag neg">${k + 1}</b><p class="p2 sm">${l}</p></div>`).join('')}</div></div>`, beats: [
+  { say: 'En muchos aspectos de la sociedad se acepta que un adulto tome decisiones malas para su salud, siempre que sean voluntarias y comprenda sus consecuencias.' },
+  { on: '.ag', say: 'La postura se desarrolla en cinco puntos.' }] },
+{ ch: '5 POSTURA ÉTICA', name: '1. El argumento de salud', html: `<div class="pad">${hdr('1. EL ARGUMENTO DE SALUD')}<div class="cols">
+  ${crd('a', ic('heart', 4), 'EL ARGUMENTO MÁS LEGÍTIMO', 'El consumo pone en riesgo la salud del usuario, y eso basta para que el Estado lo prohíba.')}
+  ${crd('b', ic('book', 4), 'LO QUE MUESTRA LA HISTORIA', 'Las prohibiciones respondieron a razones políticas, morales, fiscales y militares, no a la reducción de daños.')}
+  ${crd('c', `<div class="icons" style="gap:.5rem">${ic('mountain', 3)}${ic('cigarette', 3)}${ic('bottle', 3)}</div>`, 'CONSISTENCIA', 'Deportes extremos, tabaco y alcohol también dañan a quien los elige, y están permitidos.')}
+  </div></div>`, beats: [
+  { on: '#a', say: 'El argumento más legítimo a favor de la prohibición se basa en los resultados de salud. Es el que merece tomarse más en serio.' },
+  { on: '#b', say: 'Sin embargo, como mostró la historia, las prohibiciones no se diseñaron a partir de una evaluación de salud ni con la reducción de daños como objetivo.' },
+  { on: '#c', say: 'Además, la sociedad ya acepta riesgos comparables cuando la decisión es voluntaria e informada. El riesgo para la salud, por sí solo, no distingue a las drogas.' }] },
+{ ch: '5 POSTURA ÉTICA', name: '2. Consentimiento informado', html: two('2. CONSENTIMIENTO INFORMADO',
+  LI('book', 'CONSENTIMIENTO INFORMADO', 'Decisión voluntaria tomada después de recibir y comprender información suficiente sobre los riesgos y consecuencias.'),
+  LI('bulb', 'CAPACIDAD DE DECISIÓN', 'Habilidad para comprender información, evaluar consecuencias y tomar una decisión razonada.'),
+  LI('shield', '', 'La intervención está más justificada cuando la persona no tiene capacidad suficiente o desconoce lo que está consumiendo.')), beats: [
+  { on: '#a,#b', say: 'Para que una decisión sea autónoma se necesitan dos condiciones. Información suficiente y capacidad para evaluarla.' },
+  { on: '#c', say: 'Cuando falta alguna de las dos, la decisión deja de ser plenamente autónoma.' }] },
+{ ch: '5 POSTURA ÉTICA', name: '3. Daño a terceros', html: two('3. DAÑO A TERCEROS',
+  LI('car', 'PROTEGE A TERCEROS', 'Impedir que alguien conduzca bajo los efectos de una sustancia o venda drogas a menores.'),
+  LI('hero', 'DECIDE SOBRE EL PROPIO CUERPO', 'Impedir que un adulto consuma una sustancia únicamente porque puede causarse daño a sí mismo.'),
+  `<div class="def">${ic('mill', 2.5)}<div>${L('PRINCIPIO DE DAÑO · J. S. MILL', 'Limitar la libertad de una persona solo se justifica para evitar daño a terceros.')}</div></div>`), beats: [
+  { on: '#a,#b', say: 'Las dos intervenciones son distintas. En la primera el Estado protege los derechos y la seguridad de otras personas.' },
+  { on: '#c', say: 'En la segunda decide qué nivel de riesgo puede aceptar una persona sobre su propio cuerpo. El principio de daño de Mill traza esa línea.' }] },
+{ ch: '5 POSTURA ÉTICA', name: '4. Adicción', html: two('4. ADICCIÓN',
+  LI('pill', 'EL PROBLEMA', 'Algunas sustancias alteran progresivamente la capacidad de controlar el consumo. Una decisión autónoma puede terminar reduciendo la autonomía futura.'),
+  `<p class="p2 sm" style="margin-bottom:.4rem">ALTERNATIVAS A LA PROHIBICIÓN TOTAL</p>${IL([['book', 'Educación'], ['heart', 'Tratamiento de las adicciones'], ['flask', 'Control de calidad'], ['gavel', 'Regulación'], ['shield', 'Reducción de daños']])}`), beats: [
+  { on: '#a', say: 'La adicción es probablemente el problema más complicado para esta postura.' },
+  { on: '#b', say: 'Puede justificar ciertos tipos de intervención, pero la prohibición total no es la única manera de proteger a estas personas.' }] },
+{ ch: '5 POSTURA ÉTICA', name: '5. Daños de la prohibición', html: two('5. DAÑOS DE LA PROHIBICIÓN',
+  `<p class="p2 sm" style="margin-bottom:.4rem">EFECTOS DE LA PROHIBICIÓN</p>${IL([['skull', 'Producción y venta en mercados ilegales'], ['flask', 'Sin control de pureza, concentración o calidad'], ['gavel', 'Disputas sin instituciones legales para resolverlas']])}`,
+  LI('scales', 'BENEFICENCIA Y NO MALEFICENCIA', 'Una política se evalúa por el daño de la sustancia y también por el daño que produce la manera de regularla.')), beats: [
+  { on: '#a', say: 'Una política creada con la intención de evitar daño puede producir daños propios.' },
+  { on: '#b', say: 'Bajo los principios de beneficencia y no maleficencia, se considera el daño de la sustancia y también el de la forma en que se regula.' }] },
+{ ch: '5 POSTURA ÉTICA', name: 'Condiciones que justifican intervenir', html: `<div class="pad">${hdr('CONDICIONES QUE JUSTIFICAN INTERVENIR')}<div class="box list">
+  ${row('j1', 'bulb', 'La persona no tiene capacidad suficiente para decidir')}${row('j2', 'flask', 'Desconoce lo que está consumiendo')}
+  ${row('j3', 'pill', 'Una adicción limita seriamente su capacidad de decisión')}${row('j4', 'car', 'El consumo genera un riesgo considerable para otras personas')}</div>
+  <div class="box def h" id="j5">${ic('scales', 3)}<p class="t">Cuando un adulto competente conoce los riesgos y decide asumirlos, la prohibición necesita una justificación ética mayor que el daño a sí mismo.</p></div></div>`, beats: [
+  { on: '#j1,#j2,#j3,#j4', say: 'La postura acepta intervenciones paternalistas en cuatro situaciones.' },
+  { on: '#j5', say: 'Fuera de ellas, el daño recae principalmente sobre quien toma la decisión.' }] },
+{ ch: '5 POSTURA ÉTICA', name: 'Regulación según el riesgo', html: `<div class="pad">${hdr('REGULACIÓN SEGÚN EL RIESGO')}<div class="box def" style="flex:1;padding:1rem 1.4rem">${ic('scales', 6)}<div>${L('PROPUESTA', 'Analizar el consumo recreativo según el riesgo real de cada sustancia y cada situación, en lugar de aplicar el mismo nivel de intervención a toda droga ilegal.')}</div></div>
+  <div class="cols" style="--n:4;flex:none;gap:.4rem">${[['car', 'PROTEGER A TERCEROS'], ['book', 'INFORMAR AL USUARIO'], ['heart', 'TRATAR LA ADICCIÓN'], ['flask', 'CONTROLAR LA CALIDAD']].map(([i, l]) => `<div class="fc h mv">${ic(i, 3)}<p class="p2 sm">${l}</p></div>`).join('')}</div></div>`, beats: [
+  { say: 'La regulación es el conjunto de normas con que una autoridad pública ordena, supervisa y controla una actividad.' },
+  { on: '.mv', say: 'La autonomía no es un derecho absoluto, pero el Estado necesita una razón suficientemente fuerte para intervenir en decisiones cuyo daño recae sobre quien las toma.' }] },
+
+/* --- Capítulo 6: más allá de las drogas --- */
+map(5, 'Capítulo 6. El mismo dilema fuera de las drogas.'),
+{ ch: '6 MÁS ALLÁ DE LAS DROGAS', name: 'Paternalismo en la vida cotidiana', html: `<div class="pad">${hdr('PATERNALISMO EN LA VIDA COTIDIANA')}<div class="box list">
+  ${row('p1', 'car', 'Cinturón de seguridad obligatorio', 'OBLIGA')}${row('p2', 'helmet', 'Casco obligatorio en motocicleta', 'OBLIGA')}${row('p3', 'pill', 'Medicamentos que requieren receta', 'RESTRINGE')}
+  ${row('p4', 'burger', 'Etiquetado frontal de advertencia', 'DESALIENTA')}${row('p5', 'cigarette', 'Impuestos al tabaco y a bebidas azucaradas', 'DESALIENTA')}
+  ${row('p6', 'heart', 'Rechazo de tratamiento médico', 'PERMITIDO')}${row('p7', 'skull', 'Eutanasia y suicidio asistido', 'PROHIBIDO', true)}</div></div>`, beats: [
+  { on: '#p1,#p2,#p3,#p4,#p5', say: 'El paternalismo no se limita a las drogas. Algunas reglas obligan o restringen, y otras solo informan o encarecen una opción, como el etiquetado frontal o los impuestos al refresco.' },
+  { on: '#p6,#p7', say: 'En la medicina el dilema aparece en su forma más clara, porque la decisión sobre el propio cuerpo puede terminar en la muerte.' }] },
+{ ch: '6 MÁS ALLÁ DE LAS DROGAS', name: 'Rechazo de tratamiento médico', html: two('RECHAZO DE TRATAMIENTO MÉDICO',
+  L('EL CASO', 'Un adulto competente rechaza una transfusión por motivos religiosos, o un paciente decide no recibir quimioterapia.'),
+  L('MARCO LEGAL', 'La Ley General de Salud reconoce el derecho a aceptar o rechazar los tratamientos propuestos. Un enfermo terminal puede suspender el tratamiento curativo y dejar una voluntad anticipada.'),
+  '<p class="t">Si un adulto puede rechazar un tratamiento que le salvaría la vida, falta explicar por qué no puede asumir el riesgo de consumir una sustancia.</p>'), beats: [
+  { on: '#a', say: 'La medicina ya resolvió una versión de este dilema. Un adulto competente puede rechazar un tratamiento aunque los médicos lo consideren necesario para salvarle la vida.' },
+  { on: '#b', say: 'La ley protege esa decisión porque recae sobre el propio cuerpo. En 2024 el Tribunal Europeo de Derechos Humanos lo confirmó para una paciente que rechazó una transfusión.' },
+  { on: '#c', say: 'El consentimiento informado protege tanto el derecho a aceptar como el derecho a rechazar.' }] },
+{ ch: '6 MÁS ALLÁ DE LAS DROGAS', name: 'Eutanasia y suicidio asistido', html: two('EUTANASIA Y SUICIDIO ASISTIDO',
+  L('EUTANASIA', 'Un médico termina la vida de un paciente que lo solicita, para evitarle un sufrimiento que considera intolerable.'),
+  L('SUICIDIO ASISTIDO', 'El médico proporciona los medios y el propio paciente realiza el acto final.'),
+  '<p class="t">Es la forma más extrema del dilema. El daño autoinfligido es irreversible, y la autonomía choca directamente con la protección de la vida.</p>'), beats: [
+  { on: '#a,#b', say: 'La eutanasia lleva el dilema al extremo. La decisión ya no implica un riesgo sino la muerte, y requiere la participación del médico.' },
+  { on: '#c', say: 'Los países que la permiten exigen condiciones parecidas a las de esta postura: adultos capaces, una decisión informada y reiterada, y la confirmación de más de un médico.' }] },
+{ ch: '6 MÁS ALLÁ DE LAS DROGAS', name: 'Eutanasia en el mundo', html: `<div class="pad">${hdr('EUTANASIA EN EL MUNDO')}<div class="cols" style="--n:5;grid-template-rows:1fr 1fr;gap:.5rem">
+  ${[['co', '1997', 'COLOMBIA'], ['nl', '2002', 'PAÍSES BAJOS'], ['be', '2002', 'BÉLGICA'], ['ca', '2016', 'CANADÁ'], ['es', '2021', 'ESPAÑA'], ['ec', '2024', 'ECUADOR'], ['uy', '2025', 'URUGUAY']].map(([f, y, p], i) => `<div class="fc h ok">${ic(f, 3, 'flag wave')}<b class="tag neg">${y}</b><p class="p2 sm">${p}</p></div>`).join('')}
+  <div class="fc h no">${ic('ch', 3, 'flag wave')}<b class="tag">SOLO ASISTIDO</b><p class="p2 sm">SUIZA</p></div>
+  <div class="fc h no">${ic('mx', 3, 'flag wave')}<b class="tag">PROHIBIDA</b><p class="p2 sm">MÉXICO</p></div>
+  </div></div>`, beats: [
+  { on: '.ok', say: 'La eutanasia es legal en un número creciente de países. En América Latina ya la permiten Colombia y Ecuador, por decisión judicial, y Uruguay, por ley.' },
+  { on: '.no', say: 'Suiza solo permite el suicidio asistido. En México la Ley General de Salud prohíbe la eutanasia y el suicidio asistido, aunque varias iniciativas buscan derogar esa prohibición.' }] },
+{ ch: '6 MÁS ALLÁ DE LAS DROGAS', name: 'Gravedad del daño y trato legal', html: `<div class="pad">${hdr('GRAVEDAD DEL DAÑO Y TRATO LEGAL')}<div class="cols" style="flex:1">
+  ${[['pill', 'DROGAS RECREATIVAS', 'Riesgo variable', 'POSESIÓN TOLERADA'], ['heart', 'RECHAZO DE TRATAMIENTO', 'Puede causar la muerte', 'DERECHO RECONOCIDO'], ['skull', 'EUTANASIA', 'Causa la muerte', 'PROHIBIDA']].map(([i, n, c, l], k) => `<div class="fc h sv">${ic(i, 5)}<p class="p2 sm">${n}</p><p class="t">${c}</p><b class="tag neg h lv">${l}</b></div>`).join('')}
+  </div><div class="sev h" id="ax"><i></i></div><div class="ends p2 sm"><span>MENOR GRAVEDAD</span><span>MAYOR GRAVEDAD</span></div></div>`, beats: [
+  { on: '.sv,#ax', say: 'Si la ley siguiera la gravedad del daño, el trato sería cada vez más estricto de izquierda a derecha.' },
+  { on: '.lv', say: 'Rechazar un tratamiento que puede causar la muerte es un derecho, mientras que consumir una sustancia de riesgo variable no tiene un mercado legal.' }] },
+{ ch: '6 MÁS ALLÁ DE LAS DROGAS', name: 'El conflicto bioético', html: `<div class="pad">${hdr('EL CONFLICTO BIOÉTICO')}<div class="box ctr" style="flex:1;padding:1rem 1.6rem"><p class="t thesis">Hasta qué punto tenemos derecho a impedir que otra persona tome una decisión que consideramos dañina, cuando las principales consecuencias de esa decisión recaen sobre ella misma.</p></div></div>`, beats: [
+  { say: 'El conflicto no está en decidir si las drogas, el rechazo de un tratamiento o la eutanasia son buenos o malos, sino en determinar hasta dónde llega nuestro derecho a decidir por otros.' }] },
+
+/* --- Cierre --- */
+{ ch: 'FIN', name: 'Gracias', full: 1, html: `<div class="ttl" style="gap:.8rem"><h1>GRACIAS</h1>
+  <div class="icons">${ic('hero', 5, 'bob')}${ic('mill', 5, 'bob')}</div>
+  <p class="p2 sm">FUENTES</p>
+  <p class="t" style="font-size:1.25rem">J. S. Mill, <i>On Liberty</i> (1859) · M. A. Plant, investigación sobre adicción<br>Ley General de Salud, artículos 478 y 479 · Código Penal Federal<br>SCJN, Declaratoria General de Inconstitucionalidad 1/2018<br>Convenciones de la ONU de 1961, 1971 y 1988<br>Ley General de Salud, artículos 51 Bis 2, 166 Bis 5 y 166 Bis 21<br>TEDH, Pindo Mulla c. España (2024) · Nutt, King y Phillips, <i>The Lancet</i> (2010)</p></div>`, beats: [{}] }
+];
+
+/* ===========================================
+   MOTOR
+   Flecha derecha, espacio o clic: siguiente paso.
+   Flecha izquierda: paso anterior. Arriba y abajo: saltar de escena.
+   M: menú de escenas. F: pantalla completa.
+   =========================================== */
+const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
+const stage = $('#stage'), view = $('#view'), dlg = $('#dlg'), txt = $('#txt'), menu = $('#menu'), wipe = $('#wipe');
+const TOTAL = SC.reduce((n, s) => n + s.beats.length, 0);
+let S = 0, B = 0, lock = false, typing = false, timer = null, fullText = '', msel = 0;
+
+/* Texto de la caja inferior, letra por letra */
+function endType() { clearInterval(timer); typing = false; txt.textContent = fullText; dlg.classList.add('done'); }
+function say(t, anim) {
+  clearInterval(timer); fullText = t; dlg.classList.remove('done');
+  if (!anim || SC[S].full) return endType();
+  let i = 0; typing = true; txt.textContent = '';
+  timer = setInterval(() => { i += 2; txt.textContent = t.slice(0, i); if (i >= t.length) endType(); }, 18);
+}
+/* Aplica un paso a la escena actual */
+function apply(b, anim) {
+  if (b.off) $$(b.off).forEach(e => e.classList.remove('on'));
+  if (b.on) $$(b.on).forEach(e => e.classList.add('on'));
+  for (const [s, c] of Object.entries(b.add || {})) $$(s).forEach(e => e.classList.add(c));
+  for (const [s, t] of Object.entries(b.set || {})) $$(s).forEach(e => e.textContent = t);
+  for (const [s, o] of Object.entries(b.css || {})) $$(s).forEach(e => Object.assign(e.style, o));
+  if (b.say !== undefined) say(b.say, anim);
+}
+/* Dibuja la escena s y reproduce sus pasos hasta b */
+function goto(s, b, anim) {
+  S = s; B = b; const sc = SC[s];
+  clearInterval(timer); typing = false; txt.textContent = ''; fullText = '';
+  stage.classList.toggle('full', !!sc.full);
+  view.innerHTML = sc.html; drawSprites(view); void view.offsetWidth;
+  for (let i = 0; i <= b; i++) apply(sc.beats[i], anim && i === b);
+  hud();
+}
+function hud() {
+  $('#hl').textContent = SC[S].ch; $('#hr').textContent = (S + 1) + '/' + SC.length + ' · M MENÚ';
+  let done = B + 1; for (let i = 0; i < S; i++) done += SC[i].beats.length;
+  $('#bar').style.width = (100 * done / TOTAL) + '%';
+  history.replaceState(null, '', '#' + S + '.' + B);
+}
+/* Cambio de escena con cortina */
+function change(s, b, anim) {
+  lock = true; wipe.classList.add('go');
+  setTimeout(() => goto(s, b, anim), 260);
+  setTimeout(() => { wipe.classList.remove('go'); lock = false; }, 560);
+}
+function next() {
+  if (lock) return;
+  if (typing) return endType();
+  if (B < SC[S].beats.length - 1) { B++; apply(SC[S].beats[B], true); hud(); }
+  else if (S < SC.length - 1) change(S + 1, 0, true);
+}
+function prev() {
+  if (lock) return;
+  if (B > 0) goto(S, B - 1, false);
+  else if (S > 0) change(S - 1, SC[S - 1].beats.length - 1, false);
+}
+function jump(s) { if (!lock && s >= 0 && s < SC.length) change(s, 0, true); }
+
+/* Menú de escenas */
+function buildMenu() {
+  menu.innerHTML = '<h2>ESCENAS</h2>' + SC.map((s, i) => `<a data-i="${i}">${String(i + 1).padStart(2, '0')} ${s.name}</a>`).join('');
+}
+function toggleMenu(open) {
+  menu.classList.toggle('open', open);
+  if (menu.classList.contains('open')) { msel = S; markMenu(); }
+}
+function markMenu() { menu.querySelectorAll('a').forEach((a, i) => a.classList.toggle('sel', i === msel)); }
+
+document.addEventListener('keydown', e => {
+  const k = e.key;
+  if (menu.classList.contains('open')) {
+    if (k === 'ArrowDown') msel = Math.min(SC.length - 1, msel + 1);
+    else if (k === 'ArrowUp') msel = Math.max(0, msel - 1);
+    else if (k === 'ArrowRight') msel = Math.min(SC.length - 1, msel + 21);
+    else if (k === 'ArrowLeft') msel = Math.max(0, msel - 21);
+    else if (k === 'Enter') { toggleMenu(false); jump(msel); }
+    else if (k === 'Escape' || k === 'm' || k === 'M') toggleMenu(false);
+    markMenu(); e.preventDefault(); return;
+  }
+  if (k === 'ArrowRight' || k === ' ' || k === 'Enter' || k === 'PageDown') { next(); e.preventDefault(); }
+  else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { prev(); e.preventDefault(); }
+  else if (k === 'ArrowDown') { jump(S + 1); e.preventDefault(); }
+  else if (k === 'ArrowUp') { jump(S - 1); e.preventDefault(); }
+  else if (k === 'm' || k === 'M' || k === 'Escape') toggleMenu();
+  else if (k === 'f' || k === 'F') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+});
+document.addEventListener('click', e => {
+  const a = e.target.closest('#menu a');
+  if (a) { toggleMenu(false); jump(+a.dataset.i); return; }
+  if (menu.classList.contains('open')) return toggleMenu(false);
+  next();
+});
+
+/* Arranque: retoma la escena guardada en la URL si existe */
+buildMenu();
+const m = location.hash.match(/^#(\d+)\.(\d+)$/);
+const s0 = m ? Math.min(+m[1], SC.length - 1) : 0;
+goto(s0, m ? Math.min(+m[2], SC[s0].beats.length - 1) : 0, false);
+</script>
+</body>
+</html>
